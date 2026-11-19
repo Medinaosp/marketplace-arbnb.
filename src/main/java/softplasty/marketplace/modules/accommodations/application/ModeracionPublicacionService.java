@@ -13,6 +13,7 @@ import softplasty.marketplace.modules.users.domain.EstadoCuenta;
 import softplasty.marketplace.modules.users.domain.RolUsuario;
 import softplasty.marketplace.modules.users.domain.Usuario;
 import softplasty.marketplace.modules.users.infrastructure.persistence.UsuarioRepository;
+import softplasty.marketplace.modules.reports.application.EventoAuditoriaService;
 
 /** Domain operations for the moderation component; this module exposes no admin HTTP endpoints. */
 @Service
@@ -21,13 +22,16 @@ public class ModeracionPublicacionService {
     private final UsuarioRepository usuarios;
     private final PublicacionRepository publicaciones;
     private final ImagenPublicacionRepository imagenes;
+    private final EventoAuditoriaService auditoria;
 
     public ModeracionPublicacionService(UsuarioRepository usuarios,
                                         PublicacionRepository publicaciones,
-                                        ImagenPublicacionRepository imagenes) {
+                                        ImagenPublicacionRepository imagenes,
+                                        EventoAuditoriaService auditoria) {
         this.usuarios = usuarios;
         this.publicaciones = publicaciones;
         this.imagenes = imagenes;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -35,12 +39,14 @@ public class ModeracionPublicacionService {
         validarAdministrador(administradorId);
         Publicacion publicacion = obtenerForUpdate(publicacionId);
         publicacion.aprobar(Math.toIntExact(imagenes.countByPublicacion_Id(publicacionId)));
+        auditoria.registrar(administradorId, "PUBLICACION_APROBADA", "PUBLICACION", publicacionId);
     }
 
     @Transactional
     public void bloquear(UUID administradorId, UUID publicacionId, String motivo) {
         validarAdministrador(administradorId);
         obtenerForUpdate(publicacionId).bloquear(motivo);
+        auditoria.registrar(administradorId, "PUBLICACION_BLOQUEADA", "PUBLICACION", publicacionId);
     }
 
     private Publicacion obtenerForUpdate(UUID publicacionId) {

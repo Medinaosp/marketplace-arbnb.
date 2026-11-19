@@ -2,6 +2,7 @@ package softplasty.marketplace.modules.users.infrastructure.persistence;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -16,6 +17,22 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     Optional<Usuario> findByCorreoIgnoreCase(String correo);
 
     boolean existsByRol(RolUsuario rol);
+
+    long countByRol(RolUsuario rol);
+
+    long countByEstado(softplasty.marketplace.modules.users.domain.EstadoCuenta estado);
+
+    long countByRolAndEstado(RolUsuario rol,
+            softplasty.marketplace.modules.users.domain.EstadoCuenta estado);
+
+    long countByCreadoEnGreaterThanEqualAndCreadoEnLessThan(Instant desde, Instant hasta);
+
+    long countByRolAndCreadoEnGreaterThanEqualAndCreadoEnLessThan(
+            RolUsuario rol, Instant desde, Instant hasta);
+
+    long countByRolAndEstadoAndCreadoEnGreaterThanEqualAndCreadoEnLessThan(
+            RolUsuario rol, softplasty.marketplace.modules.users.domain.EstadoCuenta estado,
+            Instant desde, Instant hasta);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from Usuario u where u.id = :id")

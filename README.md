@@ -21,6 +21,16 @@ Para cargar cuentas y publicaciones de ejemplo, inicia con el perfil `dev` o `te
 
 Con la aplicación iniciada, Swagger UI está en `http://localhost:8080/swagger-ui.html`.
 
+## Frontend
+
+La interfaz React + Vite está en `frontend/` y consume esta API a través del proxy de desarrollo de Vite.
+
+1. Inicia PostgreSQL y el backend en `http://localhost:8080` con las variables de entorno descritas arriba.
+2. En otra terminal, desde `frontend/`, ejecuta `npm install` y luego `npm run dev`.
+3. Abre `http://localhost:5173`.
+
+La interfaz cubre búsqueda por ciudad, detalle, registro/login y los flujos de anfitrión disponibles en esta API. Reservas, pagos, subida directa de archivos, reseñas y mensajería todavía no están soportados. Para más detalles, consulta `frontend/README.md`.
+
 ### Usuarios y acceso
 
 - `POST /api/auth/registro`: crea una cuenta `HUESPED` o `ANFITRION`.

@@ -38,4 +38,8 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, UUID> 
     Optional<Publicacion> findByIdAndEstadoAndAlojamiento_Anfitrion_Estado(
             UUID id, EstadoPublicacion estado,
             softplasty.marketplace.modules.users.domain.EstadoCuenta estadoAnfitrion);
+
+    long countByEstado(EstadoPublicacion estado);
+
+    long countByEstadoAndAlojamiento_CiudadIgnoreCase(EstadoPublicacion estado, String ciudad);
 }
