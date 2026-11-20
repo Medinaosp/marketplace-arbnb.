@@ -3,6 +3,7 @@ package softplasty.marketplace.modules.users.infrastructure.persistence;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -13,6 +14,8 @@ import softplasty.marketplace.modules.users.domain.RolUsuario;
 import softplasty.marketplace.modules.users.domain.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
+
+    List<Usuario> findAllByOrderByCreadoEnDesc();
 
     Optional<Usuario> findByCorreoIgnoreCase(String correo);
 

@@ -28,6 +28,10 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, UUID> 
 
     List<Publicacion> findAllByAlojamiento_Anfitrion_IdOrderByTituloAsc(UUID anfitrionId);
 
+    List<Publicacion> findAllByOrderByTituloAsc();
+
+    List<Publicacion> findAllByEstadoOrderByTituloAsc(EstadoPublicacion estado);
+
     List<Publicacion> findAllByEstadoAndAlojamiento_Anfitrion_EstadoOrderByTituloAsc(
             EstadoPublicacion estado, softplasty.marketplace.modules.users.domain.EstadoCuenta estadoAnfitrion);
 

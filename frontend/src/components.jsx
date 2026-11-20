@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { ArrowRight, Bell, ChevronDown, CircleAlert, Compass, Heart, Home, Leaf, LogOut, Menu, Search, ShieldCheck, Sparkles, UserRound, X } from 'lucide-react';
+import { ArrowRight, Bell, ChevronDown, CircleAlert, Compass, FileBarChart2, Heart, Home, Leaf, LogOut, Menu, Search, ShieldCheck, Sparkles, UserRound, X } from 'lucide-react';
 import { Component, useState } from 'react';
 import { useAuth } from './auth';
 
@@ -19,21 +19,22 @@ export function Header({ compact = false }) {
           {session?.role === 'ANFITRION' && <NavLink to="/anfitrion">Panel de anfitrión</NavLink>}
           {session?.role === 'ANFITRION' && <NavLink to="/anfitrion/reportes">Reportes</NavLink>}
           {session?.role === 'ADMINISTRADOR' && <NavLink to="/administrador/reportes">Reportes admin</NavLink>}
+          {session?.role === 'ADMINISTRADOR' && <NavLink to="/administrador">Administración</NavLink>}
         </nav>
         <div className="nav-actions">
-          {session?.role === 'ANFITRION' ? <Link to="/anfitrion/publicaciones/nueva" className="host-link">Publica tu espacio <ArrowRight size={15} /></Link> : session?.role === 'ADMINISTRADOR' ? <Link to="/administrador/reportes" className="host-link">Panel de reportes <ArrowRight size={15} /></Link> : <Link to="/registro" className="host-link">Conviértete en anfitrión <ArrowRight size={15} /></Link>}
+          {session?.role === 'ANFITRION' ? <Link to="/anfitrion/publicaciones/nueva" className="host-link">Publica tu espacio <ArrowRight size={15} /></Link> : session?.role === 'ADMINISTRADOR' ? <Link to="/administrador" className="host-link">Panel administrador <ArrowRight size={15} /></Link> : <Link to="/registro" className="host-link">Conviértete en anfitrión <ArrowRight size={15} /></Link>}
           <div className="profile-wrap">
             <button className={`profile-button ${menuOpen ? 'is-open' : ''}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú de usuario" aria-expanded={menuOpen}>
               {menuOpen ? <X size={17} /> : <Menu size={17} />}<span className="avatar"><UserRound size={16} /></span>
             </button>
             {menuOpen && <div className="profile-menu">
-              {session ? <><div className="menu-user"><span className="avatar avatar-large"><UserRound size={18} /></span><div><strong>Tu cuenta</strong><span>{session.role === 'ANFITRION' ? 'Anfitrión' : session.role === 'ADMINISTRADOR' ? 'Administrador' : 'Huésped'}</span></div></div>{session.role === 'ANFITRION' ? <><Link to="/anfitrion" onClick={() => setMenuOpen(false)}>Administrar publicaciones</Link><Link to="/anfitrion/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : session.role === 'ADMINISTRADOR' ? <Link to="/administrador/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link> : <Link to="/" onClick={() => setMenuOpen(false)}>Explorar alojamientos</Link>}<button className="menu-signout" onClick={() => { logout(); setMenuOpen(false); navigate('/'); }}><LogOut size={16} /> Cerrar sesión</button></> : <><Link to="/login" onClick={() => setMenuOpen(false)}>Iniciar sesión</Link><Link to="/registro" onClick={() => setMenuOpen(false)}>Crear cuenta</Link><div className="menu-divider"/><Link to="/registro?rol=ANFITRION" onClick={() => setMenuOpen(false)}>Publica tu alojamiento</Link></>}
+              {session ? <><div className="menu-user"><span className="avatar avatar-large"><UserRound size={18} /></span><div><strong>Tu cuenta</strong><span>{session.role === 'ANFITRION' ? 'Anfitrión' : session.role === 'ADMINISTRADOR' ? 'Administrador' : 'Huésped'}</span></div></div><Link to="/perfil" onClick={() => setMenuOpen(false)}>Mi perfil</Link>{session.role === 'ANFITRION' ? <><Link to="/anfitrion" onClick={() => setMenuOpen(false)}>Administrar publicaciones</Link><Link to="/anfitrion/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : session.role === 'ADMINISTRADOR' ? <><Link to="/administrador" onClick={() => setMenuOpen(false)}>Panel de administración</Link><Link to="/administrador/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : <Link to="/" onClick={() => setMenuOpen(false)}>Explorar alojamientos</Link>}<button className="menu-signout" onClick={() => { logout(); setMenuOpen(false); navigate('/'); }}><LogOut size={16} /> Cerrar sesión</button></> : <><Link to="/login" onClick={() => setMenuOpen(false)}>Iniciar sesión</Link><Link to="/registro" onClick={() => setMenuOpen(false)}>Crear cuenta</Link><div className="menu-divider"/><Link to="/registro?rol=ANFITRION" onClick={() => setMenuOpen(false)}>Publica tu alojamiento</Link></>}
             </div>}
           </div>
         </div>
       </div>
     </header>
-    <nav className="mobile-nav" aria-label="Navegación móvil"><Link to="/"><Home size={19}/><span>Inicio</span></Link><Link to="/buscar?ciudad=Bogotá"><Search size={19}/><span>Explorar</span></Link>{session?.role === 'ANFITRION' ? <Link to="/anfitrion/reportes"><UserRound size={19}/><span>Reportes</span></Link> : session?.role === 'ADMINISTRADOR' ? <Link to="/administrador/reportes"><UserRound size={19}/><span>Reportes</span></Link> : <Link to="/registro"><UserRound size={19}/><span>Cuenta</span></Link>}</nav>
+    <nav className="mobile-nav" aria-label="Navegación móvil"><Link to="/"><Home size={19}/><span>Inicio</span></Link><Link to="/buscar?ciudad=Bogotá"><Search size={19}/><span>Explorar</span></Link>{session?.role === 'ANFITRION' ? <Link to="/anfitrion/reportes"><UserRound size={19}/><span>Reportes</span></Link> : session?.role === 'ADMINISTRADOR' ? <><Link to="/administrador"><ShieldCheck size={19}/><span>Admin</span></Link><Link to="/administrador/reportes"><FileBarChart2 size={19}/><span>Reportes</span></Link></> : <Link to="/registro"><UserRound size={19}/><span>Cuenta</span></Link>}</nav>
   </>;
 }
 
@@ -82,7 +83,7 @@ export function LoadingGrid() { return <div className="property-grid">{Array.fro
 export function Message({ tone = 'info', children, onClose }) { return <div className={`message message-${tone}`} role={tone === 'error' ? 'alert' : 'status'}><span>{children}</span>{onClose && <button onClick={onClose} aria-label="Cerrar mensaje"><X size={16}/></button>}</div>; }
 
 export function StatusBadge({ status }) {
-  const labels = { BORRADOR: 'Borrador', PENDIENTE_REVISION: 'En revisión', ACTIVA: 'Activa', PAUSADA: 'Pausada', BLOQUEADA: 'Requiere ajustes' };
+  const labels = { BORRADOR: 'Borrador', PENDIENTE_REVISION: 'En revisión', ACTIVA: 'Activa', PAUSADA: 'Pausada', BLOQUEADA: 'Requiere ajustes', RESTRINGIDA: 'Restringida', DESACTIVADA: 'Desactivada' };
   return <span className={`status-badge status-${status?.toLowerCase()}`}>{labels[status] || status}</span>;
 }
 

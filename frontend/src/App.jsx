@@ -4,6 +4,8 @@ import { useAuth } from './auth';
 import { Footer, Header, Message } from './components';
 import { AuthPage, HomePage, HostDashboard, ListingFormPage, PropertyPage, SearchPage } from './pages';
 import ReportsPage from './ReportsPage';
+import AdminPage from './AdminPage';
+import ProfilePage from './ProfilePage';
 
 function Protected({ children, role }) {
   const { session } = useAuth(); const location = useLocation();
@@ -23,8 +25,10 @@ export default function App() {
     <Route path="/alojamientos/:id" element={<Shell><PropertyPage/></Shell>}/>
     <Route path="/login" element={<AuthPage mode="login"/>}/>
     <Route path="/registro" element={<AuthPage mode="register"/>}/>
+    <Route path="/perfil" element={<Shell><Protected><ProfilePage/></Protected></Shell>}/>
     <Route path="/anfitrion" element={<Shell><Protected role="ANFITRION"><HostDashboard/></Protected></Shell>}/>
     <Route path="/anfitrion/reportes" element={<Shell><Protected role="ANFITRION"><ReportsPage role="ANFITRION"/></Protected></Shell>}/>
+    <Route path="/administrador" element={<Shell><Protected role="ADMINISTRADOR"><AdminPage/></Protected></Shell>}/>
     <Route path="/administrador/reportes" element={<Shell><Protected role="ADMINISTRADOR"><ReportsPage role="ADMINISTRADOR"/></Protected></Shell>}/>
     <Route path="/anfitrion/publicaciones/nueva" element={<Shell><Protected role="ANFITRION"><ListingFormPage/></Protected></Shell>}/>
     <Route path="/anfitrion/publicaciones/:id/editar" element={<Shell><Protected role="ANFITRION"><ListingFormPage/></Protected></Shell>}/>
