@@ -10,7 +10,7 @@ Paquete de entrega para la construcción incremental del Marketplace. Se complem
 | Incrementos funcionales | Historial de Git y aplicación | Se resumen en `Registro_de_incrementos.md`. Para afirmar que hubo demo al cierre de cada sprint se requiere evidencia del equipo. |
 | Base de datos, scripts y datos de prueba | `src/main/resources/db/migration/` y el perfil de desarrollo | Migraciones V1–V3 y carga idempotente de datos demo. La contraseña local se configura fuera del repositorio. |
 | Pruebas unitarias | `src/test/java/` | Se agregan pruebas de dominio para rangos de disponibilidad. La prueba de contexto requiere PostgreSQL. |
-| Integración continua | `.github/workflows/ci.yml` y [ejecución del PR #1](https://github.com/Medinaosp/marketplace-arbnb./actions/runs/45458147568) | Backend con PostgreSQL y compilación del frontend aprobados el 24 de noviembre de 2026. Para activar SonarCloud hay pasos de configuración descritos abajo. |
+| Integración continua | `.github/workflows/ci.yml` y [ejecución del PR #1](https://github.com/Medinaosp/marketplace-arbnb./actions/runs/45464832256) | Backend con PostgreSQL, compilación del frontend y análisis de SonarCloud aprobados el 24 de noviembre de 2026; el Quality Gate pasó. |
 | Documentación técnica | `README.md`, `documentos/fase-de-diseno/README.md` y este paquete | Guía de configuración, ejecución, API, datos, límites y diagrams disponible. |
 | Artefactos Scrum | `Registro_de_incrementos.md` | Reconstrucción basada en commits y en la asignación compartida. Las fechas de sprint, IDs del backlog, estimaciones, reviews y retrospectivas deben cotejarse con Jira/Projects antes de presentarlas como actas reales. |
 | Trazabilidad de historias | `Matriz_historias_Jira.md` | Diagnóstico preliminar de las 24 historias del proyecto Jira `SP` frente al código; faltan PR, pruebas, Quality Gate y release por historia. |
@@ -29,7 +29,7 @@ La fase queda lista para entrega cuando el equipo adjunte evidencia real de cada
 5. Se actualiza el informe de pruebas con los módulos integrados recientemente, los casos ejecutados, los resultados y sus capturas.
 6. Se presenta la diferencia entre el alcance del diseño y lo que quedó en el producto; en particular, reservas/pagos/reembolsos son demostrativos y la búsqueda actual no filtra por fechas ni capacidad.
 
-El PR #1 y las dos verificaciones de GitHub Actions ya son evidencia consultable. Quedan pendientes la revisión de un compañero, SonarCloud y los registros reales del tablero Scrum; no se deben marcar como aprobados sin esa evidencia.
+El [PR #1](https://github.com/Medinaosp/marketplace-arbnb./pull/1) muestra tres comprobaciones exitosas y el [Quality Gate aprobado](https://sonarcloud.io/dashboard?id=Medinaosp_marketplace-arbnb.&pullRequest=1). Quedan pendientes la revisión de un compañero y los registros reales del tablero Scrum; no se deben marcar como aprobados sin esa evidencia.
 
 ## Ejecutar las verificaciones
 
@@ -51,7 +51,7 @@ La verificación de contexto del backend requiere PostgreSQL, las migraciones Fl
 
 ## SonarCloud
 
-El workflow intenta el análisis si están definidos el secreto `SONAR_TOKEN` y las variables `SONAR_PROJECT_KEY` y `SONAR_ORGANIZATION` del repositorio. Mientras falte alguno, el workflow deja una advertencia y la fase **no debe declararse con Quality Gate aprobado**. Se necesita crear/configurar el proyecto en SonarCloud y capturar el resultado visible del análisis.
+El workflow usa el secreto `SONAR_TOKEN` y las variables `SONAR_PROJECT_KEY` y `SONAR_ORGANIZATION` del repositorio. El [análisis del PR #1](https://sonarcloud.io/dashboard?id=Medinaosp_marketplace-arbnb.&pullRequest=1) terminó con Quality Gate aprobado; el pipeline espera ese resultado y falla si el Quality Gate falla. El análisis informó cero problemas nuevos y 0 % de cobertura en código nuevo. Las credenciales permanecen fuera del repositorio.
 
 ## Flujo de integración para los cambios nuevos
 
