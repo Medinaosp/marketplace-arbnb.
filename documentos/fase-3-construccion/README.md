@@ -6,11 +6,11 @@ Paquete de entrega para la construcción incremental del Marketplace. Se complem
 
 | Evidencia solicitada | Ubicación | Estado verificable |
 |---|---|---|
-| Código versionado | Repositorio raíz | Disponible en `main`; la tarea local actual tiene cambios sin commit. |
+| Código versionado | Repositorio raíz y [PR #1](https://github.com/Medinaosp/marketplace-arbnb./pull/1) | Rama `feat/fase3-ci-documentacion` publicada; PR abierto para revisión. |
 | Incrementos funcionales | Historial de Git y aplicación | Se resumen en `Registro_de_incrementos.md`. Para afirmar que hubo demo al cierre de cada sprint se requiere evidencia del equipo. |
 | Base de datos, scripts y datos de prueba | `src/main/resources/db/migration/` y el perfil de desarrollo | Migraciones V1–V3 y carga idempotente de datos demo. La contraseña local se configura fuera del repositorio. |
 | Pruebas unitarias | `src/test/java/` | Se agregan pruebas de dominio para rangos de disponibilidad. La prueba de contexto requiere PostgreSQL. |
-| Integración continua | `.github/workflows/ci.yml` | Construye backend y frontend, ejecuta pruebas y conserva reportes. Para activar SonarCloud hay pasos de configuración descritos abajo. |
+| Integración continua | `.github/workflows/ci.yml` y [ejecución del PR #1](https://github.com/Medinaosp/marketplace-arbnb./actions/runs/45458147568) | Backend con PostgreSQL y compilación del frontend aprobados el 24 de noviembre de 2026. Para activar SonarCloud hay pasos de configuración descritos abajo. |
 | Documentación técnica | `README.md`, `documentos/fase-de-diseno/README.md` y este paquete | Guía de configuración, ejecución, API, datos, límites y diagrams disponible. |
 | Artefactos Scrum | `Registro_de_incrementos.md` | Reconstrucción basada en commits y en la asignación compartida. Las fechas de sprint, IDs del backlog, estimaciones, reviews y retrospectivas deben cotejarse con Jira/Projects antes de presentarlas como actas reales. |
 | Trazabilidad de historias | `Matriz_historias_Jira.md` | Diagnóstico preliminar de las 24 historias del proyecto Jira `SP` frente al código; faltan PR, pruebas, Quality Gate y release por historia. |
@@ -29,7 +29,7 @@ La fase queda lista para entrega cuando el equipo adjunte evidencia real de cada
 5. Se actualiza el informe de pruebas con los módulos integrados recientemente, los casos ejecutados, los resultados y sus capturas.
 6. Se presenta la diferencia entre el alcance del diseño y lo que quedó en el producto; en particular, reservas/pagos/reembolsos son demostrativos y la búsqueda actual no filtra por fechas ni capacidad.
 
-La implementación local de CI y las pruebas automatizadas ya están preparadas, pero el estado de GitHub Actions, PR, SonarCloud y tablero Scrum no puede marcarse como aprobado sin consultar esas plataformas y reunir sus evidencias.
+El PR #1 y las dos verificaciones de GitHub Actions ya son evidencia consultable. Quedan pendientes la revisión de un compañero, SonarCloud y los registros reales del tablero Scrum; no se deben marcar como aprobados sin esa evidencia.
 
 ## Ejecutar las verificaciones
 
@@ -55,7 +55,7 @@ El workflow intenta el análisis si están definidos el secreto `SONAR_TOKEN` y 
 
 ## Flujo de integración para los cambios nuevos
 
-Crear una rama por tarea, asociar el cambio con una historia o defecto, abrir Pull Request hacia `main`, esperar CI, pedir revisión a otro integrante y solo entonces fusionar. Esta guía no afirma que los commits históricos ya tengan PR: el clon local muestra únicamente `main`.
+Crear una rama por tarea, asociar el cambio con una historia o defecto, abrir Pull Request hacia `main`, esperar CI, pedir revisión a otro integrante y solo entonces fusionar. El [PR #1](https://github.com/Medinaosp/marketplace-arbnb./pull/1) demuestra este flujo para el paquete de fase 3; no acredita retrospectivamente PR para los commits anteriores.
 
 ## Límites que deben quedar declarados
 
@@ -63,4 +63,4 @@ Crear una rama por tarea, asociar el cambio con una historia o defecto, abrir Pu
 - La configuración de correo SMTP es local y no debe guardarse como secreto en Git.
 - La última versión del informe de pruebas que encontramos precede a la integración de reservas y reseñas; hay que sumar los resultados de esos módulos antes de usarlo como cierre de pruebas.
 - La barra de búsqueda local se simplificó a ciudad y botón. El documento del curso también pide filtros de fechas y capacidad; registrar esta desviación o restaurar esos filtros para la sustentación.
-- El repositorio local no contiene PRs/revisiones, releases ni un tablero de Jira exportado. Agregar capturas/enlaces reales del equipo antes de entregar esos elementos como evidencia.
+- El PR #1 sigue abierto y sin revisión; no hay releases ni un tablero de Jira exportado en este paquete. Agregar capturas/enlaces reales del equipo antes de entregar esos elementos como evidencia.
