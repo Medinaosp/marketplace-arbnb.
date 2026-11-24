@@ -3,6 +3,7 @@
 Aplicación académica para publicar alojamientos en Colombia. Incluye tres módulos principales: Usuarios (01), Alojamientos y Publicaciones (02), y Reservas y Reportes (03). El administrador dispone además de operaciones de moderación y consulta de actividad. El backend usa Java 17, Spring Boot, Spring Security y PostgreSQL; el frontend usa React y Vite. Flyway crea y actualiza el esquema; Hibernate solo lo valida.
 
 Los diagramas y el PDF de la fase de diseño están en [`documentos/fase-de-diseno/`](documentos/fase-de-diseno/README.md).
+Los artefactos y la lista de verificación de construcción (fase 3), incluido el flujo de CI, están en [`documentos/fase-3-construccion/`](documentos/fase-3-construccion/README.md).
 
 ## Configuración local
 
