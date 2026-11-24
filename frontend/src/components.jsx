@@ -17,8 +17,10 @@ export function Header({ compact = false }) {
         <nav className="desktop-nav" aria-label="Navegación principal">
           <NavLink to="/buscar?ciudad=Bogotá">Explorar alojamientos</NavLink>
           {session?.role === 'ANFITRION' && <NavLink to="/anfitrion">Panel de anfitrión</NavLink>}
+          {session?.role === 'ANFITRION' && <NavLink to="/anfitrion/reservas">Reservas</NavLink>}
           {session?.role === 'ANFITRION' && <NavLink to="/anfitrion/reportes">Reportes</NavLink>}
           {session?.role === 'ADMINISTRADOR' && <NavLink to="/administrador/reportes">Reportes admin</NavLink>}
+          {session?.role === 'ADMINISTRADOR' && <NavLink to="/administrador/comercial">Tarifas y reseñas</NavLink>}
           {session?.role === 'ADMINISTRADOR' && <NavLink to="/administrador">Administración</NavLink>}
         </nav>
         <div className="nav-actions">
@@ -28,7 +30,7 @@ export function Header({ compact = false }) {
               {menuOpen ? <X size={17} /> : <Menu size={17} />}<span className="avatar"><UserRound size={16} /></span>
             </button>
             {menuOpen && <div className="profile-menu">
-              {session ? <><div className="menu-user"><span className="avatar avatar-large"><UserRound size={18} /></span><div><strong>Tu cuenta</strong><span>{session.role === 'ANFITRION' ? 'Anfitrión' : session.role === 'ADMINISTRADOR' ? 'Administrador' : 'Huésped'}</span></div></div><Link to="/perfil" onClick={() => setMenuOpen(false)}>Mi perfil</Link>{session.role === 'ANFITRION' ? <><Link to="/anfitrion" onClick={() => setMenuOpen(false)}>Administrar publicaciones</Link><Link to="/anfitrion/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : session.role === 'ADMINISTRADOR' ? <><Link to="/administrador" onClick={() => setMenuOpen(false)}>Panel de administración</Link><Link to="/administrador/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : <Link to="/" onClick={() => setMenuOpen(false)}>Explorar alojamientos</Link>}<button className="menu-signout" onClick={() => { logout(); setMenuOpen(false); navigate('/'); }}><LogOut size={16} /> Cerrar sesión</button></> : <><Link to="/login" onClick={() => setMenuOpen(false)}>Iniciar sesión</Link><Link to="/registro" onClick={() => setMenuOpen(false)}>Crear cuenta</Link><div className="menu-divider"/><Link to="/registro?rol=ANFITRION" onClick={() => setMenuOpen(false)}>Publica tu alojamiento</Link></>}
+              {session ? <><div className="menu-user"><span className="avatar avatar-large"><UserRound size={18} /></span><div><strong>Tu cuenta</strong><span>{session.role === 'ANFITRION' ? 'Anfitrión' : session.role === 'ADMINISTRADOR' ? 'Administrador' : 'Huésped'}</span></div></div><Link to="/perfil" onClick={() => setMenuOpen(false)}>Mi perfil</Link>{session.role === 'ANFITRION' ? <><Link to="/anfitrion" onClick={() => setMenuOpen(false)}>Administrar publicaciones</Link><Link to="/anfitrion/reservas" onClick={() => setMenuOpen(false)}>Ver reservas</Link><Link to="/anfitrion/descuentos" onClick={() => setMenuOpen(false)}>Descuentos</Link><Link to="/anfitrion/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : session.role === 'ADMINISTRADOR' ? <><Link to="/administrador" onClick={() => setMenuOpen(false)}>Panel de administración</Link><Link to="/administrador/comercial" onClick={() => setMenuOpen(false)}>Tarifas y reseñas</Link><Link to="/administrador/reportes" onClick={() => setMenuOpen(false)}>Ver reportes</Link></> : <><Link to="/reservas" onClick={() => setMenuOpen(false)}>Mis reservas</Link><Link to="/" onClick={() => setMenuOpen(false)}>Explorar alojamientos</Link></>}<button className="menu-signout" onClick={() => { logout(); setMenuOpen(false); navigate('/'); }}><LogOut size={16} /> Cerrar sesión</button></> : <><Link to="/login" onClick={() => setMenuOpen(false)}>Iniciar sesión</Link><Link to="/registro" onClick={() => setMenuOpen(false)}>Crear cuenta</Link><div className="menu-divider"/><Link to="/registro?rol=ANFITRION" onClick={() => setMenuOpen(false)}>Publica tu alojamiento</Link></>}
             </div>}
           </div>
         </div>
@@ -54,8 +56,8 @@ export function SearchForm({ initialCity = '', variant = 'hero', onSearch }) {
   return <form className={`search-form search-${variant}`} onSubmit={submit}>
     <label className="search-destination"><Compass size={18}/><span><small>¿A dónde quieres ir?</small><input aria-label="Ciudad de destino" placeholder="Ciudad de Colombia" value={city} onChange={event => setCity(event.target.value)} list="colombian-cities" required /></span></label>
     <datalist id="colombian-cities"><option>Bogotá</option><option>Medellín</option><option>Cartagena</option><option>Santa Marta</option><option>Salento</option></datalist>
-    <div className="search-disabled" aria-label="Fechas próximamente"><span><small>Fechas</small><strong>Próximamente</strong></span></div>
-    <div className="search-disabled search-guests" aria-label="Huéspedes próximamente"><span><small>Huéspedes</small><strong>Próximamente</strong></span></div>
+    <div className="search-disabled" aria-label="Fechas disponibles en la ficha"><span><small>Fechas</small><strong>Ver disponibilidad</strong></span></div>
+    <div className="search-disabled search-guests" aria-label="Huéspedes en la cotización"><span><small>Huéspedes</small><strong>Al cotizar</strong></span></div>
     <button className="button button-primary search-button" type="submit" aria-label="Buscar alojamientos"><Search size={18}/><span>Buscar</span></button>
   </form>;
 }
@@ -66,7 +68,7 @@ export function PropertyCard({ property, index = 0 }) {
   const formatPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
   return <article className="property-card">
     <Link to={`/alojamientos/${property.id}`} className="property-photo" aria-label={`Ver ${property.titulo}`}>
-      {photo ? <img src={photo} alt={property.imagenes[0]?.textoAlternativo || property.titulo} loading={index > 5 ? 'lazy' : 'eager'} /> : <div className={`photo-placeholder placeholder-${index % 4}`}><Home size={34}/><span>Foto del alojamiento</span></div>}
+      {photo ? <PropertyImage src={photo} alt={property.imagenes[0]?.textoAlternativo || property.titulo} loading={index > 5 ? 'lazy' : 'eager'} /> : <div className={`photo-placeholder placeholder-${index % 4}`}><Home size={34}/><span>Foto del alojamiento</span></div>}
       <span className="photo-count"><span className="photo-dot"/><span>{property.imagenes?.length || 0} fotos</span></span>
       <span className="property-kind">{type}</span>
     </Link>
@@ -80,10 +82,25 @@ export function PropertyCard({ property, index = 0 }) {
 
 export function LoadingGrid() { return <div className="property-grid">{Array.from({ length: 6 }, (_, index) => <div className="property-skeleton" key={index}><div className="skeleton skeleton-image"/><div className="skeleton skeleton-line"/><div className="skeleton skeleton-line short"/><div className="skeleton skeleton-line"/></div>)}</div>; }
 
+export function PropertyImage({ src, alt, ...props }) {
+  const handleError = event => {
+    const image = event.currentTarget;
+    if (image.dataset.fallbackApplied) {
+      image.style.display = 'none';
+      return;
+    }
+    image.dataset.fallbackApplied = 'true';
+    const cabinNumber = `${alt || ''} ${src || ''}`.match(/caba(?:ñ|n)a\s*(\d+)/i)?.[1];
+    image.src = `/alojamientos/cabanas/cabana-${String(cabinNumber || '01').padStart(2, '0')}.png`;
+    image.alt = 'Ilustración local de una cabaña';
+  };
+  return <img src={src} alt={alt} onError={handleError} {...props}/>;
+}
+
 export function Message({ tone = 'info', children, onClose }) { return <div className={`message message-${tone}`} role={tone === 'error' ? 'alert' : 'status'}><span>{children}</span>{onClose && <button onClick={onClose} aria-label="Cerrar mensaje"><X size={16}/></button>}</div>; }
 
 export function StatusBadge({ status }) {
-  const labels = { BORRADOR: 'Borrador', PENDIENTE_REVISION: 'En revisión', ACTIVA: 'Activa', PAUSADA: 'Pausada', BLOQUEADA: 'Requiere ajustes', RESTRINGIDA: 'Restringida', DESACTIVADA: 'Desactivada' };
+  const labels = { BORRADOR: 'Borrador', PENDIENTE_REVISION: 'En revisión', PENDIENTE_PAGO: 'Pendiente de pago', PAGO_FALLIDO: 'Pago rechazado', CONFIRMADA: 'Confirmada', CANCELADA: 'Cancelada', COMPLETADA: 'Completada', EXPIRADA: 'Expirada', VISIBLE: 'Visible', OCULTA: 'Oculta', ACTIVA: 'Activa', PAUSADA: 'Pausada', BLOQUEADA: 'Requiere ajustes', RESTRINGIDA: 'Restringida', DESACTIVADA: 'Desactivada' };
   return <span className={`status-badge status-${status?.toLowerCase()}`}>{labels[status] || status}</span>;
 }
 

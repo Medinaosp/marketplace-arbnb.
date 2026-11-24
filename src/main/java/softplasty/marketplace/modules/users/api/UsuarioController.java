@@ -64,4 +64,10 @@ public class UsuarioController {
     public void canjearRestablecimiento(@Valid @RequestBody CanjearRestablecimientoRequest request) {
         restablecimientoService.canjearToken(request.token(), request.contrasenaNueva());
     }
+
+    @PostMapping("/restablecimientos")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void solicitarRestablecimiento(@Valid @RequestBody SolicitarRestablecimientoRequest request) {
+        restablecimientoService.solicitarRestablecimiento(request);
+    }
 }

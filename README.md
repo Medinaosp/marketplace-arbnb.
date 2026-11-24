@@ -1,6 +1,8 @@
-# Marketplace de alojamientos: backend
+# Patio — Marketplace de alojamientos
 
-API REST modular para los módulos de Usuarios (01) y Alojamientos/Publicaciones (02), con disponibilidad manual. Está construida con Java 17, Spring Boot, Spring Security, Spring Data JPA y PostgreSQL 17. Flyway crea el esquema; Hibernate solo lo valida.
+Aplicación académica para publicar alojamientos en Colombia. Incluye tres módulos principales: Usuarios (01), Alojamientos y Publicaciones (02), y Reservas y Reportes (03). El administrador dispone además de operaciones de moderación y consulta de actividad. El backend usa Java 17, Spring Boot, Spring Security y PostgreSQL; el frontend usa React y Vite. Flyway crea y actualiza el esquema; Hibernate solo lo valida.
+
+Los diagramas y el PDF de la fase de diseño están en [`documentos/fase-de-diseno/`](documentos/fase-de-diseno/README.md).
 
 ## Configuración local
 
@@ -9,13 +11,15 @@ API REST modular para los módulos de Usuarios (01) y Alojamientos/Publicaciones
    - `DB_PASSWORD`: la contraseña actual del rol `marketplace_app`.
    - `APP_JWT_SECRET`: una clave HMAC aleatoria, en Base64, que represente al menos 32 bytes aleatorios.
    - `ADMIN_EMAIL` y `ADMIN_PASSWORD`: credenciales para crear el primer administrador. La contraseña debe tener al menos 12 caracteres.
-3. Inicia la aplicación. Flyway aplicará `V1__create_marketplace_schema.sql` y cargará los catálogos. Si ya hay una cuenta administradora, la semilla no la modifica y no necesita las variables `ADMIN_*`.
+3. En IntelliJ, agrega `dev` en **Active profiles** solo si quieres cargar las cuentas y alojamientos demo. Inicia la aplicación. Flyway aplicará las migraciones V1, V2 y V3 y cargará los catálogos. Si ya hay una cuenta administradora, la semilla no la modifica y no necesita las variables `ADMIN_*`.
+
+Para habilitar la recuperación de contraseña por correo, configura también `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` y `APP_FRONTEND_URL` en esa misma configuración de ejecución. `.env.example` muestra el formato; IntelliJ no carga ese archivo automáticamente. Con Gmail, utiliza una contraseña de aplicación. No guardes esas credenciales en el repositorio.
 
 No guardes secretos en el repositorio ni los compartas en capturas. El valor de `DB_PASSWORD` debe coincidir con la contraseña que ya tiene el rol en PostgreSQL. La aplicación no cambia contraseñas de base de datos.
 
 Opcionales: `DB_URL` (por defecto `jdbc:postgresql://localhost:5432/marketplace_db`), `DB_USERNAME` (por defecto `marketplace_app`), `APP_JWT_ISSUER`, `APP_CORS_ALLOWED_ORIGINS`. El backend requiere zona horaria `America/Bogota`; en producción el inicio falla si la zona del sistema difiere. Los valores `Instant` se almacenan en UTC.
 
-Para cargar cuentas y publicaciones de ejemplo, inicia con el perfil `dev` o `test` y configura `APP_DEMO_HOST_PASSWORD` y `APP_DEMO_GUEST_PASSWORD` (mínimo 8 caracteres). Los correos demo por defecto son `anfitrion.demo@example.test` y `huesped.demo@example.test`; se pueden cambiar con `APP_DEMO_HOST_EMAIL` y `APP_DEMO_GUEST_EMAIL`. El sembrado es opcional, no corre en el perfil predeterminado ni en producción y no registra las contraseñas.
+Para cargar cuentas y alojamientos de ejemplo, inicia con el perfil `dev` y configura `APP_DEMO_HOST_PASSWORD` y `APP_DEMO_GUEST_PASSWORD` (mínimo 8 caracteres). El cargador idempotente crea los perfiles de demostración, publicaciones de flujo y diez cabañas distribuidas entre ocho ciudades. Los correos demo por defecto son `anfitrion.demo@example.test` y `huesped.demo@example.test`; se pueden cambiar con `APP_DEMO_HOST_EMAIL` y `APP_DEMO_GUEST_EMAIL`. El sembrado es opcional, no corre en el perfil predeterminado ni en producción y no registra las contraseñas. Las cabañas usan ilustraciones y datos de ubicación/precio de demostración; reemplázalos antes de presentar esos anuncios como reales.
 
 ## API
 
@@ -29,7 +33,7 @@ La interfaz React + Vite está en `frontend/` y consume esta API a través del p
 2. En otra terminal, desde `frontend/`, ejecuta `npm install` y luego `npm run dev`.
 3. Abre `http://localhost:5173`.
 
-La interfaz cubre búsqueda por ciudad, detalle, registro/login y los flujos de anfitrión disponibles en esta API. Reservas, pagos, subida directa de archivos, reseñas y mensajería todavía no están soportados. Para más detalles, consulta `frontend/README.md`.
+La interfaz cubre búsqueda, detalle, autenticación, flujos de anfitrión, cotizaciones, reservas, pagos demostrativos, cancelaciones, descuentos, tarifas de servicios y reseñas moderadas. No hay cargos ni reembolsos reales; la carga de fotos sigue siendo por URL y la mensajería no está implementada.
 
 ### Usuarios y acceso
 
@@ -38,9 +42,10 @@ La interfaz cubre búsqueda por ciudad, detalle, registro/login y los flujos de 
 - `GET /api/usuarios/me`, `PUT /api/usuarios/me`: consulta y actualiza el perfil.
 - `PUT /api/usuarios/me/contrasena`: cambia la contraseña propia.
 - `DELETE /api/usuarios/me`: desactiva la cuenta propia.
-- `POST /api/usuarios/restablecimientos/canjear`: canjea un token de un solo uso emitido por el componente 06. La emisión está expuesta como servicio de aplicación para ese componente y exige un administrador activo; no hay endpoint administrativo aquí.
+- `POST /api/usuarios/restablecimientos`: solicita por correo un enlace de recuperación; responde igual si la cuenta no existe.
+- `POST /api/usuarios/restablecimientos/canjear`: canjea un token de un solo uso. La emisión administrativa está expuesta como servicio de aplicación y exige un administrador activo; el token se entrega por correo cuando SMTP está configurado.
 
-El token de recuperación dura 30 minutos y solo se almacena su hash. Los JWT no tienen refresh ni revocación; rol y estado se consultan en la base en cada solicitud. Una cuenta restringida puede consultar su perfil y cambiar su contraseña; una desactivada no puede acceder.
+El enlace público de recuperación dura 30 minutos, se puede usar una sola vez y solo se almacena su hash. Se limita a una solicitud por cuenta cada minuto. Los administradores no se recuperan por este flujo. Los JWT no tienen refresh ni revocación; rol y estado se consultan en la base en cada solicitud. Una cuenta restringida puede consultar su perfil y cambiar su contraseña; una desactivada no puede acceder.
 
 ### Catálogos
 
@@ -55,7 +60,7 @@ El token de recuperación dura 30 minutos y solo se almacena su hash. Los JWT no
 - `DELETE /api/alojamientos/{id}/bloqueos?inicio=AAAA-MM-DD&fin=AAAA-MM-DD`: libera solo un rango exacto existente.
 - `GET /api/alojamientos/{id}/disponibilidad?inicio=AAAA-MM-DD&fin=AAAA-MM-DD`.
 
-La disponibilidad solo contempla bloqueos manuales; no hay reservas en estos módulos.
+La cotización y la creación de reserva comprueban bloqueos y reservas confirmadas o pendientes de pago. Las reservas pendientes retienen las fechas durante 15 minutos.
 
 ### Publicaciones
 
@@ -65,16 +70,26 @@ La disponibilidad solo contempla bloqueos manuales; no hay reservas en estos mó
 - Servicios: `PUT /api/publicaciones/{id}/servicios`.
 - Flujo: `POST /api/publicaciones/{id}/enviar-revision`, `/pausar` y `/activar`.
 
-Las publicaciones se crean como `BORRADOR`; requieren título, descripción, precio, alojamiento y política. El borrador puede no tener fotos; para revisión y activación se requiere al menos una URL HTTP/HTTPS. Los órdenes de las fotos son únicos por publicación. Los cambios importantes en una activa la devuelven a revisión; los hechos durante una pausa se registran hasta reactivar. La moderación (aprobar/bloquear) corresponde al componente 06 y está disponible aquí como servicio de aplicación, sin endpoint HTTP.
+Las publicaciones se crean como `BORRADOR`; requieren título, descripción, precio, alojamiento y política. El borrador puede no tener fotos; para revisión y activación se requiere al menos una URL HTTP/HTTPS. Los órdenes de las fotos son únicos por publicación. Los cambios importantes en una activa la devuelven a revisión; los hechos durante una pausa se registran hasta reactivar. El administrador puede listar, aprobar y bloquear publicaciones desde `/api/administracion/publicaciones`.
+
+## Cotizaciones, reservas y reseñas
+
+- Huésped: `POST /api/publicaciones/{id}/cotizaciones`, `POST /api/reservas/cotizaciones/{id}/reservar`, `POST /api/reservas/{id}/pago-simulado`, `GET /api/reservas/mias`, `POST /api/reservas/{id}/cancelar` y `POST /api/reservas/{id}/resena`.
+- Anfitrión: `GET /api/reservas/anfitrion` y administrar descuentos en `/api/publicaciones/{id}/descuentos`.
+- Administrador: consultar y cambiar tarifas en `/api/servicios/tarifas` y `/api/administracion/servicios/{id}/tarifa`; moderar reseñas en `/api/administracion/resenas`.
+- Los pagos/reembolsos son simulados. Cotizaciones vencen en 30 minutos. Las reseñas quedan pendientes de revisión.
 
 ## Persistencia
 
-Las migraciones se ubican en `src/main/resources/db/migration`. No cambies una migración ya aplicada; crea otra versión para cambios posteriores. `V1` contiene las nueve tablas del diseño, el indicador de revisión aprobado por el equipo, catálogos de servicios y las tres políticas provisionales. Los textos de cancelación son informativos, pendientes de validación con el cliente antes de producción.
+Las migraciones se ubican en `src/main/resources/db/migration`. No cambies una migración ya aplicada; crea otra versión para cambios posteriores. `V1` contiene usuarios, alojamientos, publicaciones, servicios y disponibilidad; `V2` agrega reportes y auditoría; `V3` agrega tarifas, descuentos, cotizaciones, reservas, pagos simulados, cancelaciones y reseñas. Algunas de las tablas de V3 se operan con consultas JDBC en vez de entidades JPA. Los textos de cancelación son informativos y los pagos/reembolsos son simulados.
+
+## Diagramas y fase de diseño
+
+Consulta [`documentos/fase-de-diseno/README.md`](documentos/fase-de-diseno/README.md) para ver los nueve diagramas y el PDF original. Los diagramas representan el diseño entregado; algunas decisiones de implementación o alcance pueden diferir, como se indica en el índice.
 
 ## Alcance y límites conocidos
 
-- `DISPONIBLE` permanece en el enum del diseño, pero las operaciones solo crean y liberan rangos `BLOQUEADO`.
-- Los bloqueos no consideran reservas. No se calcula la devolución de cancelaciones.
-- El motivo de moderación no se persiste. Los endpoints administrativos de moderación y emisión de tokens pertenecen al componente 06.
-- La emisión del token se devuelve una sola vez al invocador del servicio; no se envía correo en este alcance.
+- El panel de reportes conserva sus series demostrativas y todavía no calcula cifras a partir de las reservas persistidas.
+- El motivo de moderación de publicaciones se valida pero no se persiste.
+- El envío del enlace requiere que se configure un proveedor SMTP con las variables indicadas arriba.
 - Configura HTTPS para cualquier despliegue de producción.

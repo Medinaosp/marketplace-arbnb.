@@ -37,6 +37,7 @@ public class SecurityConfiguration {
                         .requestMatchers(org.springframework.web.cors.CorsUtils::isPreFlightRequest).permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/usuarios/restablecimientos",
                                 "/api/usuarios/restablecimientos/canjear",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -45,6 +46,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/publicaciones/mias", "/api/publicaciones/mias/**")
                         .access(accountAccessAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, "/api/publicaciones", "/api/publicaciones/*")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/publicaciones/*/resenas", "/api/servicios/tarifas")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/catalogos/**").permitAll()
                         .anyRequest().access(accountAccessAuthorizationManager)

@@ -100,44 +100,97 @@ public class DatosDemostracion implements ApplicationRunner {
         }
         String normalizedHostEmail = hostEmail.trim().toLowerCase(Locale.ROOT);
         String normalizedGuestEmail = guestEmail.trim().toLowerCase(Locale.ROOT);
-        if (usuarios.findByCorreoIgnoreCase(normalizedHostEmail).isPresent()) {
-            LOGGER.info("Datos de demostración ya existen; no se modificaron.");
-            return;
+        Usuario anfitrion = usuarios.findByCorreoIgnoreCase(normalizedHostEmail).orElse(null);
+        boolean cuentaNueva = anfitrion == null;
+        if (cuentaNueva) {
+            if (usuarios.findByCorreoIgnoreCase(normalizedGuestEmail).isPresent()) {
+                throw new IllegalStateException("DEMO_GUEST_EMAIL ya pertenece a una cuenta existente.");
+            }
+            politicaContrasena.validar(hostPassword);
+            politicaContrasena.validar(guestPassword);
+            anfitrion = usuarios.save(new Usuario("Anfitrión de demostración", normalizedHostEmail,
+                    passwordEncoder.encode(hostPassword), RolUsuario.ANFITRION,
+                    EstadoCuenta.ACTIVA, Instant.now(clock)));
+            usuarios.save(new Usuario("Huésped de demostración", normalizedGuestEmail,
+                    passwordEncoder.encode(guestPassword), RolUsuario.HUESPED,
+                    EstadoCuenta.ACTIVA, Instant.now(clock)));
         }
-        if (usuarios.findByCorreoIgnoreCase(normalizedGuestEmail).isPresent()) {
-            throw new IllegalStateException("DEMO_GUEST_EMAIL ya pertenece a una cuenta existente.");
-        }
-        politicaContrasena.validar(hostPassword);
-        politicaContrasena.validar(guestPassword);
-
-        Usuario anfitrion = usuarios.save(new Usuario("Anfitrión de demostración", normalizedHostEmail,
-                passwordEncoder.encode(hostPassword), RolUsuario.ANFITRION,
-                EstadoCuenta.ACTIVA, Instant.now(clock)));
-        usuarios.save(new Usuario("Huésped de demostración", normalizedGuestEmail,
-                passwordEncoder.encode(guestPassword), RolUsuario.HUESPED,
-                EstadoCuenta.ACTIVA, Instant.now(clock)));
 
         PoliticaCancelacion politica = politicas.findById(FLEXIBLE)
                 .orElseThrow(() -> new IllegalStateException("Falta el catálogo Flexible de cancelación."));
         List<ServicioAlojamiento> catalogoServicios = servicios.findAllByActivoTrueOrderByNombreAsc();
 
-        crearPublicacion(anfitrion, politica, "Apartamento de demostración activo",
-                "Alojamiento de ejemplo en Bogotá para explorar el flujo público.",
-                EstadoPublicacion.ACTIVA, "BOGOTA", catalogoServicios, true);
-        crearPublicacion(anfitrion, politica, "Casa de demostración pendiente",
-                "Publicación de ejemplo que espera revisión administrativa.",
-                EstadoPublicacion.PENDIENTE_REVISION, "MEDELLIN", catalogoServicios, false);
-        crearPublicacion(anfitrion, politica, "Loft de demostración pausado",
-                "Publicación de ejemplo pausada por su anfitrión.",
-                EstadoPublicacion.PAUSADA, "BOGOTA", catalogoServicios, false);
-        crearPublicacion(anfitrion, politica, "Cabaña de demostración bloqueada",
-                "Publicación de ejemplo bloqueada para el flujo de corrección.",
-                EstadoPublicacion.BLOQUEADA, "MEDELLIN", catalogoServicios, false);
-        crearPublicacion(anfitrion, politica, "Borrador de demostración",
-                "Borrador sin imágenes, válido según la excepción acordada.",
-                EstadoPublicacion.BORRADOR, "BOGOTA", catalogoServicios, false);
-        LOGGER.info("Datos de demostración creados para los perfiles dev/test.");
+        if (cuentaNueva) {
+            crearPublicacion(anfitrion, politica, "Apartamento de demostración activo",
+                    "Alojamiento de ejemplo en Bogotá para explorar el flujo público.",
+                    EstadoPublicacion.ACTIVA, "BOGOTA", catalogoServicios, true);
+            crearPublicacion(anfitrion, politica, "Casa de demostración pendiente",
+                    "Publicación de ejemplo que espera revisión administrativa.",
+                    EstadoPublicacion.PENDIENTE_REVISION, "MEDELLIN", catalogoServicios, false);
+            crearPublicacion(anfitrion, politica, "Loft de demostración pausado",
+                    "Publicación de ejemplo pausada por su anfitrión.",
+                    EstadoPublicacion.PAUSADA, "BOGOTA", catalogoServicios, false);
+            crearPublicacion(anfitrion, politica, "Cabaña de demostración bloqueada",
+                    "Publicación de ejemplo bloqueada para el flujo de corrección.",
+                    EstadoPublicacion.BLOQUEADA, "MEDELLIN", catalogoServicios, false);
+            crearPublicacion(anfitrion, politica, "Borrador de demostración",
+                    "Borrador sin imágenes, válido según la excepción acordada.",
+                    EstadoPublicacion.BORRADOR, "BOGOTA", catalogoServicios, false);
+        }
+        crearCabanasDemostracion(anfitrion, politica);
+        LOGGER.info("Datos de demostración revisados para los perfiles dev/test.");
     }
+
+    private void crearCabanasDemostracion(Usuario anfitrion, PoliticaCancelacion politica) {
+        List<Publicacion> existentes = publicaciones
+                .findAllByAlojamiento_Anfitrion_IdOrderByTituloAsc(anfitrion.getId());
+        List<CabanaDemo> cabanas = List.of(
+                new CabanaDemo(1, "Bogotá", "Cabaña de montaña · Bogotá 1", 4, "260000", "Zona norte"),
+                new CabanaDemo(2, "Bogotá", "Cabaña de montaña · Bogotá 2", 6, "310000", "Zona rural"),
+                new CabanaDemo(3, "Medellín", "Cabaña entre verdes · Medellín 1", 4, "280000", "Las afueras"),
+                new CabanaDemo(4, "Medellín", "Cabaña entre verdes · Medellín 2", 6, "350000", "Ladera campestre"),
+                new CabanaDemo(5, "Cartagena", "Cabaña caribeña · Cartagena", 4, "420000", "Zona campestre"),
+                new CabanaDemo(6, "Santa Marta", "Cabaña junto al mar · Santa Marta", 5, "380000", "Corredor turístico"),
+                new CabanaDemo(7, "Salento", "Cabaña cafetera · Salento", 4, "290000", "Valle de Cocora"),
+                new CabanaDemo(8, "Villa de Leyva", "Cabaña colonial · Villa de Leyva", 5, "320000", "Entorno rural"),
+                new CabanaDemo(9, "Guatapé", "Cabaña del embalse · Guatapé", 4, "340000", "Cerca del embalse"),
+                new CabanaDemo(10, "Cali", "Cabaña campestre · Cali", 4, "240000", "Zona campestre")
+        );
+        for (CabanaDemo cabana : cabanas) {
+            Publicacion existente = existentes.stream()
+                    .filter(p -> p.getTitulo().equals(cabana.titulo()))
+                    .findFirst().orElse(null);
+            if (existente == null) {
+                crearCabana(anfitrion, politica, cabana);
+            } else if (existente.getEstado() == EstadoPublicacion.BORRADOR) {
+                publicarCabanaDemostracion(existente, cabana);
+            }
+        }
+    }
+
+    private void crearCabana(Usuario anfitrion, PoliticaCancelacion politica, CabanaDemo cabana) {
+        Alojamiento alojamiento = alojamientos.save(new Alojamiento(anfitrion, cabana.ciudad(),
+                cabana.zona() + " · ubicación de demostración", "Cabaña", cabana.capacidad()));
+        Publicacion publicacion = publicaciones.save(new Publicacion(alojamiento, politica, cabana.titulo(),
+                "Publicación de demostración. Completa la ubicación y los detalles reales antes de publicarla.",
+                new BigDecimal(cabana.precio()), new String[0], EstadoPublicacion.BORRADOR));
+        publicarCabanaDemostracion(publicacion, cabana);
+    }
+
+    private void publicarCabanaDemostracion(Publicacion publicacion, CabanaDemo cabana) {
+        long cantidadImagenes = imagenes.countByPublicacion_Id(publicacion.getId());
+        if (cantidadImagenes == 0) {
+            imagenes.save(new ImagenPublicacion(publicacion,
+                    "http://localhost:5173/alojamientos/cabanas/cabana-%02d.png".formatted(cabana.numero()),
+                    1, "Ilustración de cabaña de demostración en " + cabana.ciudad()));
+            cantidadImagenes = 1;
+        }
+        publicacion.enviarARevision(Math.toIntExact(cantidadImagenes));
+        publicacion.aprobar(Math.toIntExact(cantidadImagenes));
+    }
+
+    private record CabanaDemo(int numero, String ciudad, String titulo, int capacidad,
+                              String precio, String zona) { }
 
     private void crearPublicacion(Usuario anfitrion, PoliticaCancelacion politica, String titulo,
                                   String descripcion, EstadoPublicacion estado, String ciudad,

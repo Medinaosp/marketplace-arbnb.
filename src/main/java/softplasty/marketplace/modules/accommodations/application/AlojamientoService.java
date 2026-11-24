@@ -2,10 +2,12 @@ package softplasty.marketplace.modules.accommodations.application;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,14 +31,16 @@ public class AlojamientoService {
     private final AlojamientoRepository alojamientos;
     private final PeriodoDisponibilidadRepository periodos;
     private final UsuarioRepository usuarios;
+    private final JdbcTemplate jdbc;
     private final Clock clock;
 
     public AlojamientoService(AlojamientoRepository alojamientos,
                               PeriodoDisponibilidadRepository periodos,
-                              UsuarioRepository usuarios, Clock clock) {
+                              UsuarioRepository usuarios, JdbcTemplate jdbc, Clock clock) {
         this.alojamientos = alojamientos;
         this.periodos = periodos;
         this.usuarios = usuarios;
+        this.jdbc = jdbc;
         this.clock = clock;
     }
 
@@ -71,6 +75,9 @@ public class AlojamientoService {
                                                   LocalDate inicio, LocalDate fin) {
         obtenerAnfitrionActivo(anfitrionId);
         Alojamiento alojamiento = obtenerPropioForUpdate(anfitrionId, alojamientoId);
+        if (hayReservaEn(alojamientoId, inicio, fin)) {
+            throw new IllegalStateException("No se puede bloquear un periodo ocupado por una reserva.");
+        }
         PeriodoDisponibilidad periodo = alojamiento.bloquearPeriodo(inicio, fin, LocalDate.now(clock));
         periodos.save(periodo);
         return PeriodoDisponibilidadResponse.desde(periodo);
@@ -100,7 +107,12 @@ public class AlojamientoService {
         obtenerAnfitrionActivo(anfitrionId);
         Alojamiento alojamiento = obtenerPropio(anfitrionId, alojamientoId);
         return new DisponibilidadResponse(alojamientoId, inicio, fin,
-                alojamiento.estaDisponible(inicio, fin));
+                alojamiento.estaDisponible(inicio, fin) && !hayReservaEn(alojamientoId, inicio, fin));
+    }
+
+    private boolean hayReservaEn(UUID alojamientoId, LocalDate inicio, LocalDate fin) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from reserva r join publicacion p on p.id=r.publicacion_id where p.alojamiento_id=? and r.checkin<? and r.checkout>? and (r.estado='CONFIRMADA' or (r.estado='PENDIENTE_PAGO' and r.vence_pago_en>?)))",
+                Boolean.class, alojamientoId, fin, inicio, Timestamp.from(clock.instant())));
     }
 
     private Usuario obtenerAnfitrionActivo(UUID id) {

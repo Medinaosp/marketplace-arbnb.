@@ -3,6 +3,7 @@ package softplasty.marketplace.modules.users.infrastructure.persistence;
 import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -14,6 +15,8 @@ import softplasty.marketplace.modules.users.domain.SolicitudRecuperacion;
 public interface SolicitudRecuperacionRepository extends JpaRepository<SolicitudRecuperacion, UUID> {
 
     Optional<SolicitudRecuperacion> findByToken(String token);
+
+    Optional<SolicitudRecuperacion> findFirstByUsuario_IdOrderBySolicitadoEnDesc(UUID usuarioId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from SolicitudRecuperacion s where s.token = :token")

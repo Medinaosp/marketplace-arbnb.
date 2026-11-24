@@ -7,13 +7,21 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import softplasty.marketplace.modules.users.api.SolicitarRestablecimientoRequest;
 import softplasty.marketplace.modules.users.domain.EstadoCuenta;
 import softplasty.marketplace.modules.users.domain.RolUsuario;
 import softplasty.marketplace.modules.users.domain.SolicitudRecuperacion;
@@ -26,24 +34,35 @@ import softplasty.marketplace.modules.users.infrastructure.persistence.UsuarioRe
 public class RestablecimientoContrasenaService {
 
     private static final Duration TOKEN_TTL = Duration.ofMinutes(30);
+    private static final Duration REQUEST_COOLDOWN = Duration.ofMinutes(1);
+    private static final Logger log = LoggerFactory.getLogger(RestablecimientoContrasenaService.class);
 
     private final UsuarioRepository usuarios;
     private final SolicitudRecuperacionRepository solicitudes;
     private final PasswordEncoder passwordEncoder;
     private final PoliticaContrasena politicaContrasena;
     private final Clock clock;
+    private final JavaMailSender mailSender;
+    private final String frontendUrl;
+    private final String senderAddress;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public RestablecimientoContrasenaService(UsuarioRepository usuarios,
                                              SolicitudRecuperacionRepository solicitudes,
                                              PasswordEncoder passwordEncoder,
                                              PoliticaContrasena politicaContrasena,
-                                             Clock clock) {
+                                             Clock clock,
+                                             JavaMailSender mailSender,
+                                             @Value("${app.password-reset.frontend-url}") String frontendUrl,
+                                             @Value("${app.password-reset.from}") String senderAddress) {
         this.usuarios = usuarios;
         this.solicitudes = solicitudes;
         this.passwordEncoder = passwordEncoder;
         this.politicaContrasena = politicaContrasena;
         this.clock = clock;
+        this.mailSender = mailSender;
+        this.frontendUrl = frontendUrl;
+        this.senderAddress = senderAddress;
     }
 
     /** Invoked by component 06; the clear-text token is returned once to its caller. */
@@ -66,17 +85,68 @@ public class RestablecimientoContrasenaService {
                     "El restablecimiento administrativo no aplica a cuentas administradoras.");
         }
 
-        solicitudes.findAllByUsuario_IdAndUsadaFalse(usuarioId)
-                .forEach(SolicitudRecuperacion::marcarUsada);
+        Usuario usuarioBloqueado = usuarios.findByIdForUpdate(usuarioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "La cuenta solicitada no existe."));
+        return crearToken(usuarioBloqueado, Instant.now(clock));
+    }
 
+    /** Public request always returns the same response to avoid account enumeration. */
+    @Transactional
+    public void solicitarRestablecimiento(SolicitarRestablecimientoRequest request) {
+        String correo = request.correo().trim().toLowerCase(Locale.ROOT);
+        usuarios.findByCorreoIgnoreCase(correo).ifPresent(usuarioEncontrado -> {
+            Usuario usuario = usuarios.findByIdForUpdate(usuarioEncontrado.getId()).orElse(null);
+            if (usuario == null || usuario.getEstado() != EstadoCuenta.ACTIVA
+                    || usuario.getRol() == RolUsuario.ADMINISTRADOR) {
+                return;
+            }
+
+            Instant ahora = Instant.now(clock);
+            Instant ultimaSolicitud = solicitudes
+                    .findFirstByUsuario_IdOrderBySolicitadoEnDesc(usuario.getId())
+                    .map(SolicitudRecuperacion::getSolicitadoEn)
+                    .orElse(Instant.MIN);
+            if (ultimaSolicitud.plus(REQUEST_COOLDOWN).isAfter(ahora)) {
+                return;
+            }
+
+            String token = crearToken(usuario, ahora);
+            enviarEnlace(usuario.getCorreo(), token);
+        });
+    }
+
+    private String crearToken(Usuario usuario, Instant solicitadoEn) {
+        solicitudes.findAllByUsuario_IdAndUsadaFalse(usuario.getId())
+                .forEach(SolicitudRecuperacion::marcarUsada);
         byte[] random = new byte[32];
         secureRandom.nextBytes(random);
         String tokenClaro = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(random);
-        Instant solicitadoEn = Instant.now(clock);
-        SolicitudRecuperacion solicitud = new SolicitudRecuperacion(
-                usuario, hashToken(tokenClaro), solicitadoEn, solicitadoEn.plus(TOKEN_TTL), false);
-        solicitudes.save(solicitud);
+        solicitudes.save(new SolicitudRecuperacion(usuario, hashToken(tokenClaro), solicitadoEn,
+                solicitadoEn.plus(TOKEN_TTL), false));
         return tokenClaro;
+    }
+
+    private void enviarEnlace(String correo, String token) {
+        String link = frontendUrl.replaceAll("/+$", "")
+                + "/recuperar-contrasena#token=" + token;
+        SimpleMailMessage message = new SimpleMailMessage();
+        if (senderAddress != null && !senderAddress.isBlank()) {
+            message.setFrom(senderAddress);
+        }
+        message.setTo(correo);
+        message.setSubject("Restablece tu contraseña de Patio");
+        message.setText("Recibimos una solicitud para cambiar la contraseña de tu cuenta de Patio.\n\n"
+                + "Abre este enlace para elegir una contraseña nueva (vence en 30 minutos y se puede usar una sola vez):\n"
+                + link + "\n\nSi no solicitaste este cambio, ignora este mensaje. Tu contraseña actual seguirá vigente.");
+        try {
+            mailSender.send(message);
+        } catch (MailException exception) {
+            // Do not expose whether an address exists or include its value in application logs.
+            Throwable cause = exception.getMostSpecificCause();
+            log.warn("No fue posible entregar un correo de restablecimiento. Fallo: {}; causa: {}.",
+                    exception.getClass().getSimpleName(), cause.getClass().getSimpleName());
+        }
     }
 
     @Transactional

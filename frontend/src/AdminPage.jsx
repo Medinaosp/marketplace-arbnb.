@@ -3,7 +3,7 @@ import { ArrowRight, Ban, Building2, Check, ClipboardList, FileBarChart2, Refres
 import { Link } from 'react-router-dom';
 import { endpoints } from './api';
 import { useAuth } from './auth';
-import { Button, EmptyState, Field, Message, StatusBadge } from './components';
+import { Button, EmptyState, Field, Message, PropertyImage, StatusBadge } from './components';
 
 const money = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 const listingStates = ['', 'PENDIENTE_REVISION', 'ACTIVA', 'PAUSADA', 'BORRADOR', 'BLOQUEADA'];
@@ -20,7 +20,7 @@ function AdminListing({ item, busy, onApprove, onBlock }) {
   const photo = listing.imagenes?.[0]?.referencia;
   const canBlock = ['PENDIENTE_REVISION', 'ACTIVA', 'PAUSADA'].includes(listing.estado);
   return <article className="admin-listing">
-    <div className="admin-listing-photo">{photo ? <img src={photo} alt={listing.titulo}/> : <Building2 size={27}/>}</div>
+    <div className="admin-listing-photo">{photo ? <PropertyImage src={photo} alt={listing.titulo}/> : <Building2 size={27}/>}</div>
     <div className="admin-listing-copy">
       <div className="admin-listing-kicker"><span>{listing.ciudad} · {listing.tipoAlojamiento}</span><StatusBadge status={listing.estado}/></div>
       <h3>{listing.titulo}</h3>

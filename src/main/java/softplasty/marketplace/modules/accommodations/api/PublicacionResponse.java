@@ -11,6 +11,7 @@ import softplasty.marketplace.modules.accommodations.domain.PublicacionServicio;
 public record PublicacionResponse(
         UUID id,
         UUID alojamientoId,
+        String anfitrionNombre,
         String ciudad,
         String ubicacionTexto,
         String tipoAlojamiento,
@@ -30,6 +31,7 @@ public record PublicacionResponse(
                                              List<ImagenPublicacion> imagenes,
                                              List<PublicacionServicio> servicios) {
         return new PublicacionResponse(publicacion.getId(), publicacion.getAlojamiento().getId(),
+                publicacion.getAlojamiento().getAnfitrion().getNombre(),
                 publicacion.getAlojamiento().getCiudad(), publicacion.getAlojamiento().getUbicacionTexto(),
                 publicacion.getAlojamiento().getTipo(), publicacion.getAlojamiento().getCapacidadMaxima(),
                 publicacion.getPoliticaCancelacion().getId(), publicacion.getPoliticaCancelacion().getNombre(),
