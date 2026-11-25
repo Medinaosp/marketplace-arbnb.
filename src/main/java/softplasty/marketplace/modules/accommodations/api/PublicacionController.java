@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import softplasty.marketplace.modules.accommodations.application.PublicacionService;
 import softplasty.marketplace.security.AccountPrincipal;
 
@@ -93,6 +95,15 @@ public class PublicacionController {
                                               @PathVariable UUID publicacionId,
                                               @PathVariable UUID imagenId) {
         return publicacionService.eliminarImagen(principal.id(), publicacionId, imagenId);
+    }
+
+    @PostMapping(value = "/{publicacionId}/imagenes/archivo", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('ANFITRION')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PublicacionResponse subirImagen(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID publicacionId,
+                                           @RequestParam("archivo") MultipartFile archivo,
+                                           @RequestParam(value = "textoAlternativo", required = false) String texto) throws IOException {
+        return publicacionService.subirImagen(principal.id(), publicacionId, archivo.getBytes(), archivo.getContentType(), texto);
     }
 
     @PatchMapping("/{publicacionId}/imagenes/{imagenId}/orden")

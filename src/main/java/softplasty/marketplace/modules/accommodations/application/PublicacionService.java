@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -123,6 +126,44 @@ public class PublicacionService {
         publicacion.registrarCambioImportante(Math.toIntExact(cantidad));
         imagenes.delete(imagen);
         return respuesta(publicacion);
+    }
+
+    @Transactional
+    public PublicacionResponse subirImagen(UUID anfitrionId, UUID publicacionId, byte[] contenido, String tipo, String alt) {
+        Publicacion publicacion = obtenerPropiaForUpdate(anfitrionId, publicacionId);
+        if (contenido.length == 0 || contenido.length > 2 * 1024 * 1024 || !("image/jpeg".equals(tipo) || "image/png".equals(tipo))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto debe ser JPG o PNG y pesar máximo 2 MB.");
+        }
+        try (var entrada = ImageIO.createImageInputStream(new ByteArrayInputStream(contenido))) {
+            var lectores = ImageIO.getImageReaders(entrada);
+            if (!lectores.hasNext()) throw new IllegalArgumentException();
+            var lector = lectores.next();
+            try {
+                lector.setInput(entrada, true, true);
+                String formato = lector.getFormatName().toLowerCase(Locale.ROOT);
+                if (!("image/jpeg".equals(tipo) && ("jpeg".equals(formato) || "jpg".equals(formato))
+                        || "image/png".equals(tipo) && "png".equals(formato))
+                        || (long) lector.getWidth(0) * lector.getHeight(0) > 20_000_000L
+                        || lector.read(0) == null) throw new IllegalArgumentException();
+            } finally { lector.dispose(); }
+        } catch (IOException | IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El archivo no es una imagen válida.");
+        }
+        var actuales = imagenes.findAllByPublicacion_IdOrderByOrdenAsc(publicacionId);
+        int orden = actuales.stream().mapToInt(ImagenPublicacion::getOrden).max().orElse(0) + 1;
+        ImagenPublicacion imagen = new ImagenPublicacion(publicacion, "archivo", orden, alt == null || alt.isBlank() ? "Fotografía del alojamiento" : alt.trim().substring(0, Math.min(alt.trim().length(), 300)));
+        imagen.guardarArchivo(contenido, tipo);
+        imagenes.saveAndFlush(imagen);
+        imagen.asignarReferenciaArchivo();
+        publicacion.registrarCambioImportante(actuales.size() + 1);
+        return respuesta(publicacion);
+    }
+
+    @Transactional(readOnly = true)
+    public ImagenPublicacion obtenerArchivo(UUID id) {
+        ImagenPublicacion imagen = imagenes.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (imagen.getContenido() == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        return imagen;
     }
 
     @Transactional

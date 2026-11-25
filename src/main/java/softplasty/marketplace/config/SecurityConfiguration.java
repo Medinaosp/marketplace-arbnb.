@@ -49,6 +49,7 @@ public class SecurityConfiguration {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/publicaciones/*/resenas", "/api/servicios/tarifas")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/imagenes/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/catalogos/**").permitAll()
                         .anyRequest().access(accountAccessAuthorizationManager)
                 )

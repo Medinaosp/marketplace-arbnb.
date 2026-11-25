@@ -12,7 +12,9 @@ Los artefactos y la lista de verificación de construcción (fase 3), incluido e
    - `DB_PASSWORD`: la contraseña actual del rol `marketplace_app`.
    - `APP_JWT_SECRET`: una clave HMAC aleatoria, en Base64, que represente al menos 32 bytes aleatorios.
    - `ADMIN_EMAIL` y `ADMIN_PASSWORD`: credenciales para crear el primer administrador. La contraseña debe tener al menos 12 caracteres.
-3. En IntelliJ, agrega `dev` en **Active profiles** solo si quieres cargar las cuentas y alojamientos demo. Inicia la aplicación. Flyway aplicará las migraciones V1, V2 y V3 y cargará los catálogos. Si ya hay una cuenta administradora, la semilla no la modifica y no necesita las variables `ADMIN_*`.
+3. En IntelliJ, agrega `dev` en **Active profiles** solo si quieres cargar las cuentas y alojamientos demo. Inicia la aplicación. Flyway aplicará las migraciones pendientes y cargará los catálogos. Si ya hay una cuenta administradora, la semilla no la modifica y no necesita las variables `ADMIN_*`.
+
+Para una base de demostración nueva se pueden configurar `ADMIN_EMAIL=admin@marketplace.local` y `ADMIN_PASSWORD=adminmarketplace`. El administrador solo se crea si todavía no existe uno. En Render, agrega estas variables al servicio del backend y reinícialo; la base local y la de Render son independientes. No uses esta contraseña de ejemplo para datos reales.
 
 Para habilitar la recuperación de contraseña por correo, configura también `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` y `APP_FRONTEND_URL` en esa misma configuración de ejecución. `.env.example` muestra el formato; IntelliJ no carga ese archivo automáticamente. Con Gmail, utiliza una contraseña de aplicación. No guardes esas credenciales en el repositorio.
 
@@ -71,7 +73,7 @@ La cotización y la creación de reserva comprueban bloqueos y reservas confirma
 - Servicios: `PUT /api/publicaciones/{id}/servicios`.
 - Flujo: `POST /api/publicaciones/{id}/enviar-revision`, `/pausar` y `/activar`.
 
-Las publicaciones se crean como `BORRADOR`; requieren título, descripción, precio, alojamiento y política. El borrador puede no tener fotos; para revisión y activación se requiere al menos una URL HTTP/HTTPS. Los órdenes de las fotos son únicos por publicación. Los cambios importantes en una activa la devuelven a revisión; los hechos durante una pausa se registran hasta reactivar. El administrador puede listar, aprobar y bloquear publicaciones desde `/api/administracion/publicaciones`.
+Las publicaciones se crean como `BORRADOR`; requieren título, descripción, precio, alojamiento y política. El borrador puede no tener fotos; para revisión y activación se requiere al menos una imagen. Se pueden subir archivos JPG o PNG de hasta 2 MB, que se guardan en PostgreSQL; las referencias HTTP/HTTPS existentes siguen disponibles. Los órdenes de las fotos son únicos por publicación. Los cambios importantes en una activa la devuelven a revisión; los hechos durante una pausa se registran hasta reactivar. El administrador puede listar, aprobar y bloquear publicaciones desde `/api/administracion/publicaciones`.
 
 ## Cotizaciones, reservas y reseñas
 
@@ -82,7 +84,7 @@ Las publicaciones se crean como `BORRADOR`; requieren título, descripción, pre
 
 ## Persistencia
 
-Las migraciones se ubican en `src/main/resources/db/migration`. No cambies una migración ya aplicada; crea otra versión para cambios posteriores. `V1` contiene usuarios, alojamientos, publicaciones, servicios y disponibilidad; `V2` agrega reportes y auditoría; `V3` agrega tarifas, descuentos, cotizaciones, reservas, pagos simulados, cancelaciones y reseñas. Algunas de las tablas de V3 se operan con consultas JDBC en vez de entidades JPA. Los textos de cancelación son informativos y los pagos/reembolsos son simulados.
+Todas las migraciones se ubican en la única carpeta `src/main/resources/db/migration`. Flyway aplica sus archivos en orden: V1 crea el esquema inicial, V2 agrega reportes y auditoría, V3 agrega reservas y reseñas, y V4 añade el almacenamiento de imágenes. No elimines ni cambies versiones ya aplicadas: la base existente necesita su historial. Los textos de cancelación son informativos y los pagos/reembolsos son simulados.
 
 ## Diagramas y fase de diseño
 
