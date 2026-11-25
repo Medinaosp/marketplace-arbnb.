@@ -56,8 +56,6 @@ export function SearchForm({ initialCity = '', variant = 'hero', onSearch }) {
   return <form className={`search-form search-${variant}`} onSubmit={submit}>
     <label className="search-destination"><Compass size={18}/><span><small>¿A dónde quieres ir?</small><input aria-label="Ciudad de destino" placeholder="Ciudad de Colombia" value={city} onChange={event => setCity(event.target.value)} list="colombian-cities" required /></span></label>
     <datalist id="colombian-cities"><option>Bogotá</option><option>Medellín</option><option>Cartagena</option><option>Santa Marta</option><option>Salento</option></datalist>
-    <div className="search-disabled" aria-label="Fechas disponibles en la ficha"><span><small>Fechas</small><strong>Ver disponibilidad</strong></span></div>
-    <div className="search-disabled search-guests" aria-label="Huéspedes en la cotización"><span><small>Huéspedes</small><strong>Al cotizar</strong></span></div>
     <button className="button button-primary search-button" type="submit" aria-label="Buscar alojamientos"><Search size={18}/><span>Buscar</span></button>
   </form>;
 }
