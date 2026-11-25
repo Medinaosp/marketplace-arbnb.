@@ -9,17 +9,18 @@ export class ApiError extends Error {
 }
 
 export async function request(path, { method = 'GET', body, token, headers = {} } = {}) {
+  const isForm = body instanceof FormData;
   let response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       headers: {
         Accept: 'application/json',
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(body === undefined || isForm ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined ? {} : { body: isForm ? body : JSON.stringify(body) }),
     });
   } catch {
     throw new ApiError('No pudimos conectar con el servidor. Verifica que el backend esté iniciado.');
@@ -36,7 +37,12 @@ export async function request(path, { method = 'GET', body, token, headers = {} 
     }
     throw new ApiError(message, response.status);
   }
-  return data;
+  const fixImageUrls = value => {
+    if (Array.isArray(value)) return value.map(fixImageUrls);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, key === 'referencia' && typeof item === 'string' && item.startsWith('/api/imagenes/') ? `${API_BASE}${item}` : fixImageUrls(item)]));
+    return value;
+  };
+  return fixImageUrls(data);
 }
 
 async function download(path, { body, token } = {}) {
@@ -91,6 +97,7 @@ export const endpoints = {
   updateListing: (id, body, token) => request(`/api/publicaciones/${id}`, { method: 'PUT', body, token }),
   updateServices: (id, serviceIds, token) => request(`/api/publicaciones/${id}/servicios`, { method: 'PUT', body: { servicioIds }, token }),
   addImage: (id, body, token) => request(`/api/publicaciones/${id}/imagenes`, { method: 'POST', body, token }),
+  uploadImage: (id, file, alt, token) => { const data = new FormData(); data.append('archivo', file); data.append('textoAlternativo', alt); return request(`/api/publicaciones/${id}/imagenes/archivo`, { method: 'POST', body: data, token }); },
   removeImage: (id, imageId, token) => request(`/api/publicaciones/${id}/imagenes/${imageId}`, { method: 'DELETE', token }),
   sendToReview: (id, token) => request(`/api/publicaciones/${id}/enviar-revision`, { method: 'POST', token }),
   pauseListing: (id, token) => request(`/api/publicaciones/${id}/pausar`, { method: 'POST', token }),

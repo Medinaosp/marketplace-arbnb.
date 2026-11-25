@@ -51,5 +51,8 @@
 .commerce-section > p { color:var(--text-muted,#a6b0aa); }
 .rate-row { display:grid; grid-template-columns:minmax(150px,1fr) minmax(110px,180px) minmax(140px,200px) auto; gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--commerce-border); }
 .review-form { display:grid; gap:12px; width:min(640px,100%); margin-top:16px; }
+.image-drop { display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px; margin:16px 0; border:2px dashed #8caa99; border-radius:12px; cursor:pointer; color:var(--green); text-align:center; }
+.image-drop:focus-within { outline:2px solid #258269; outline-offset:2px; }
+.image-drop input { max-width:100%; }
 .review-form label { display:grid; gap:8px; }
 @media(max-width:760px) { .commerce-form { grid-template-columns:1fr; } .commerce-card { flex-direction:column; } .commerce-card-actions { justify-content:flex-start; } .rate-row { grid-template-columns:1fr 1fr; } .rate-row strong { grid-column:1/-1; } }

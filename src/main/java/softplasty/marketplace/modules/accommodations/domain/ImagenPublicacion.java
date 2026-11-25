@@ -33,6 +33,12 @@ public class ImagenPublicacion {
     @Column(name = "texto_alternativo", nullable = false)
     private String textoAlternativo;
 
+    @Column(name = "contenido", columnDefinition = "bytea")
+    private byte[] contenido;
+
+    @Column(name = "tipo_contenido")
+    private String tipoContenido;
+
     protected ImagenPublicacion() {
     }
 
@@ -49,6 +55,17 @@ public class ImagenPublicacion {
     public String getReferencia() { return referencia; }
     public int getOrden() { return orden; }
     public String getTextoAlternativo() { return textoAlternativo; }
+    public byte[] getContenido() { return contenido; }
+    public String getTipoContenido() { return tipoContenido; }
+
+    public void guardarArchivo(byte[] datos, String tipo) {
+        this.contenido = datos;
+        this.tipoContenido = tipo;
+    }
+
+    public void asignarReferenciaArchivo() {
+        this.referencia = "/api/imagenes/" + id;
+    }
 
     public void cambiarOrden(int nuevoOrden) {
         if (nuevoOrden < 1) {
